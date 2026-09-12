@@ -2,6 +2,27 @@
 
 Formato basado en Keep a Changelog. Versionado semantico.
 
+## [0.3.0] - 2026-09-11
+
+### Cambiado
+- Identidad visual sobria: paleta de grises calidos y tonos nude, en reemplazo de los
+  acentos azul/amarillo/naranjo/rojo.
+- Tipografia: titulos y encabezados de tarjeta en serif del sistema (Georgia /
+  Palatino Linotype / Book Antiqua). Los numeros y tablas siguen en sans con cifras
+  tabulares, porque las cifras de Georgia son no alineadas y ensucian las columnas.
+- Escala de severidad del aging en tonos tierra progresivos: greige, arena, camel,
+  terracota y marron profundo. Los pills pasan de forma de capsula a rectangulo suave
+  con mayusculas y espaciado.
+- Bordes mas rectos (radio 6px en tarjetas, 3px en pills) y mas aire en el encabezado.
+- Favicon alineado a la nueva paleta.
+
+### Corregido
+- El tramo "+90 dias" generaba la clase CSS `c--90-dias` (guion doble por el signo `+`),
+  que no coincidia con ningun selector: el pill quedaba sin fondo y con texto invisible.
+  Ahora el nombre de clase se normaliza y se limpian los guiones del borde.
+- Contraste de las etiquetas secundarias: el gris de apoyo subio de `#8b8279` a
+  `#776d64` para superar 4.5:1 sobre los fondos claros (WCAG AA).
+
 ## [0.2.0] - 2026-09-11
 
 ### Agregado

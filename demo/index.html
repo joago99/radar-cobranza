@@ -4,45 +4,55 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Radar de Cobranza - Demo SpA</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f172a'/%3E%3Crect x='6' y='18' width='5' height='8' fill='%232563eb'/%3E%3Crect x='13.5' y='13' width='5' height='13' fill='%23f97316'/%3E%3Crect x='21' y='7' width='5' height='19' fill='%23dc2626'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%232b2724'/%3E%3Crect x='6' y='18' width='5' height='8' fill='%239c8f80'/%3E%3Crect x='13.5' y='13' width='5' height='13' fill='%23b3805a'/%3E%3Crect x='21' y='7' width='5' height='19' fill='%238d5a41'/%3E%3C/svg%3E">
 <script src="../vendor/chart.umd.min.js"></script>
 <style>
-  :root{--bg:#f8fafc;--card:#ffffff;--texto:#0f172a;--suave:#64748b;--borde:#e2e8f0;
-        --azul:#2563eb;--amar:#eab308;--nara:#f97316;--rojo:#dc2626;--rojo2:#7f1d1d}
+  :root{
+    --bg:#f6f4f1; --card:#fffdfb; --borde:#e7e1da; --linea:#efeae4;
+    --texto:#2b2724; --suave:#776d64; --tinta:#3d3833; --alerta:#7a4331;
+    --nude-1:#9c8f80; --nude-2:#c9a883; --nude-3:#b3805a; --nude-4:#8d5a41; --nude-5:#653f2f;
+    --serif:Georgia,'Palatino Linotype','Book Antiqua','Times New Roman',serif;
+    --sans:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--texto);
-       font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
-  header{background:#fff;border-bottom:1px solid var(--borde);padding:18px 28px;
+  body{margin:0;background:var(--bg);color:var(--texto);font-family:var(--sans);
+       font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  header{background:var(--card);border-bottom:1px solid var(--borde);padding:20px 30px;
          display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
-  h1{margin:0;font-size:1.25rem;letter-spacing:-.01em}
-  header .meta{color:var(--suave);font-size:.82rem}
-  main{padding:22px 28px;max-width:1400px;margin:0 auto}
+  h1{margin:0;font-family:var(--serif);font-weight:600;font-size:1.45rem;letter-spacing:.01em}
+  header .meta{color:var(--suave);font-size:.8rem;letter-spacing:.02em}
+  main{padding:24px 30px;max-width:1400px;margin:0 auto}
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px}
-  .kpi{background:var(--card);border:1px solid var(--borde);border-radius:10px;padding:16px 18px}
-  .kpi .l{color:var(--suave);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em}
-  .kpi .v{font-size:1.6rem;font-weight:600;margin-top:6px;font-variant-numeric:tabular-nums}
-  .kpi .s{color:var(--suave);font-size:.78rem;margin-top:2px}
-  .kpi.alerta .v{color:var(--rojo)}
+  .kpi{background:var(--card);border:1px solid var(--borde);border-radius:6px;padding:16px 18px}
+  .kpi .l{color:var(--suave);font-size:.72rem;text-transform:uppercase;letter-spacing:.09em}
+  .kpi .v{font-size:1.55rem;font-weight:600;margin-top:8px;letter-spacing:-.01em;
+          color:var(--tinta);font-variant-numeric:tabular-nums}
+  .kpi .s{color:var(--suave);font-size:.76rem;margin-top:3px}
+  .kpi.alerta .v{color:var(--alerta)}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px}
   @media(max-width:900px){.grid{grid-template-columns:1fr}}
-  .card{background:var(--card);border:1px solid var(--borde);border-radius:10px;padding:18px}
-  .card h2{margin:0 0 14px;font-size:.95rem;font-weight:600}
+  .card{background:var(--card);border:1px solid var(--borde);border-radius:6px;padding:20px}
+  .card h2{margin:0 0 16px;font-family:var(--serif);font-weight:600;font-size:1.02rem;
+           letter-spacing:.01em;color:var(--tinta)}
   .chart{height:280px}
-  table{width:100%;border-collapse:collapse;font-size:.86rem}
-  th{text-align:left;color:var(--suave);font-weight:600;font-size:.74rem;
-     text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid var(--borde)}
-  td{padding:9px 10px;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums}
-  tr:hover td{background:#f8fafc}
+  table{width:100%;border-collapse:collapse;font-size:.85rem}
+  th{text-align:left;color:var(--suave);font-weight:600;font-size:.7rem;
+     text-transform:uppercase;letter-spacing:.09em;padding:9px 10px;border-bottom:1px solid var(--borde)}
+  td{padding:10px;border-bottom:1px solid var(--linea);font-variant-numeric:tabular-nums}
+  tr:hover td{background:#faf7f4}
   .num{text-align:right}
-  .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.74rem;font-weight:600;color:#fff}
-  .c-Corriente{background:var(--azul)}.c-0-30{background:var(--amar)}
-  .c-31-60{background:var(--nara)}.c-61-90{background:var(--rojo)}.c-90{background:var(--rojo2)}
-  .c-0-30dias{background:var(--amar)}.c-31-60dias{background:var(--nara)}
-  .c-61-90dias{background:var(--rojo)}.c-90dias{background:var(--rojo2)}
-  .doc{color:var(--suave);font-size:.78rem;margin-top:4px}
-  .nota{background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12;border-radius:8px;
-        padding:10px 14px;font-size:.83rem;margin-bottom:18px}
-  footer{padding:18px 28px;color:var(--suave);font-size:.78rem;text-align:center}
+  .pill{display:inline-block;padding:3px 8px;border-radius:3px;font-size:.7rem;font-weight:600;
+        letter-spacing:.05em;text-transform:uppercase}
+  .c-corriente{background:#ece7e1;color:#5c554d}
+  .c-0-30-dias{background:#e8d9c5;color:#6b5330}
+  .c-31-60-dias{background:#dcc3a3;color:#6f4b25}
+  .c-61-90-dias{background:#c99a72;color:#41260f}
+  .c-90-dias{background:#8d5a41;color:#fdf8f4}
+  .doc{color:var(--suave);font-size:.76rem;margin-top:6px;letter-spacing:.01em}
+  .nota{background:#f3ece4;border:1px solid #e3d5c6;color:#6b5330;border-radius:6px;
+        padding:11px 15px;font-size:.82rem;margin-bottom:20px}
+  footer{padding:18px 30px;color:var(--suave);font-size:.76rem;text-align:center;
+         letter-spacing:.02em;border-top:1px solid var(--borde);margin-top:26px}
 </style>
 </head>
 <body>
@@ -81,7 +91,8 @@ const D = {"hoy": "2026-09-11", "multimoneda": true, "kpis": {"por_cobrar": 5095
 const clp = n => '$' + n.toLocaleString('es-CL');
 const fmt = (n,m) => m === 'CLP' ? clp(n)
   : (m === 'USD' ? 'US$' : m + ' ') + n.toLocaleString('es-CL');
-const clase = t => 'c-' + t.replace(/\s+/g,'').replace('Corriente','Corriente');
+// Ojo: el '+' de "+90 dias" genera guion doble si no se limpia el borde
+const clase = t => 'c-' + t.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
 
 // Nota de multimoneda
 if (D.multimoneda) {
@@ -110,12 +121,12 @@ new Chart(document.getElementById('cAging'), {
   type:'bar',
   data:{ labels:D.aging.map(a=>a.tramo),
     datasets:[{ data:D.aging.map(a=>a.monto), backgroundColor:D.aging.map((a,i)=>
-      ['#2563eb','#eab308','#f97316','#dc2626','#7f1d1d'][i]), borderRadius:4, maxBarThickness:70 }]},
+      ['#9c8f80','#c9a883','#b3805a','#8d5a41','#653f2f'][i]), borderRadius:3, maxBarThickness:70 }]},
   options:{ responsive:true, maintainAspectRatio:false,
     plugins:{ legend:{display:false},
       tooltip:{callbacks:{label:c=>clp(c.parsed.y)}} },
-    scales:{ y:{beginAtZero:true, ticks:{callback:v=>(v/1000000).toFixed(1)+' M'},
-      grid:{color:'#eef2f7'}}, x:{grid:{display:false}} } }
+    scales:{ y:{beginAtZero:true, ticks:{callback:v=>(v/1000000).toFixed(1)+' M', color:'#776d64'},
+      grid:{color:'#efeae4'}}, x:{grid:{display:false}, ticks:{color:'#776d64'}} } }
 });
 
 // Top deudores (ojo: NO usar 'top' como nombre de variable: colisiona con window.top)
@@ -123,12 +134,12 @@ const topDeu = D.ranking.filter(c=>c.vencido>0).slice(0,10);
 new Chart(document.getElementById('cTop'), {
   type:'bar',
   data:{ labels:topDeu.map(c=>c.cliente.length>22?c.cliente.slice(0,21)+'...':c.cliente),
-    datasets:[{ data:topDeu.map(c=>c.vencido), backgroundColor:'#dc2626',
-      borderRadius:4, maxBarThickness:26 }]},
+    datasets:[{ data:topDeu.map(c=>c.vencido), backgroundColor:'#8d5a41',
+      borderRadius:3, maxBarThickness:26 }]},
   options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
     plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>clp(c.parsed.x)}} },
-    scales:{ x:{beginAtZero:true, ticks:{callback:v=>(v/1000000).toFixed(1)+' M'},
-      grid:{color:'#eef2f7'}}, y:{grid:{display:false}} } }
+    scales:{ x:{beginAtZero:true, ticks:{callback:v=>(v/1000000).toFixed(1)+' M', color:'#776d64'},
+      grid:{color:'#efeae4'}}, y:{grid:{display:false}, ticks:{color:'#776d64'}} } }
 });
 
 // Tabla clientes
