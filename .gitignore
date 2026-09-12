@@ -1,0 +1,5 @@
+# Radar de Cobranza — salidas generadas
+salida/
+*.xlsx
+__pycache__/
+.venv/

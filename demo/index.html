@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar de Cobranza - Demo SpA</title>
+<script src="../vendor/chart.umd.min.js"></script>
+<style>
+  :root{--bg:#f8fafc;--card:#ffffff;--texto:#0f172a;--suave:#64748b;--borde:#e2e8f0;
+        --azul:#2563eb;--amar:#eab308;--nara:#f97316;--rojo:#dc2626;--rojo2:#7f1d1d}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--texto);
+       font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+  header{background:#fff;border-bottom:1px solid var(--borde);padding:18px 28px;
+         display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+  h1{margin:0;font-size:1.25rem;letter-spacing:-.01em}
+  header .meta{color:var(--suave);font-size:.82rem}
+  main{padding:22px 28px;max-width:1400px;margin:0 auto}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px}
+  .kpi{background:var(--card);border:1px solid var(--borde);border-radius:10px;padding:16px 18px}
+  .kpi .l{color:var(--suave);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em}
+  .kpi .v{font-size:1.6rem;font-weight:600;margin-top:6px;font-variant-numeric:tabular-nums}
+  .kpi .s{color:var(--suave);font-size:.78rem;margin-top:2px}
+  .kpi.alerta .v{color:var(--rojo)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--borde);border-radius:10px;padding:18px}
+  .card h2{margin:0 0 14px;font-size:.95rem;font-weight:600}
+  .chart{height:280px}
+  table{width:100%;border-collapse:collapse;font-size:.86rem}
+  th{text-align:left;color:var(--suave);font-weight:600;font-size:.74rem;
+     text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid var(--borde)}
+  td{padding:9px 10px;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums}
+  tr:hover td{background:#f8fafc}
+  .num{text-align:right}
+  .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.74rem;font-weight:600;color:#fff}
+  .c-Corriente{background:var(--azul)}.c-0-30{background:var(--amar)}
+  .c-31-60{background:var(--nara)}.c-61-90{background:var(--rojo)}.c-90{background:var(--rojo2)}
+  .c-0-30dias{background:var(--amar)}.c-31-60dias{background:var(--nara)}
+  .c-61-90dias{background:var(--rojo)}.c-90dias{background:var(--rojo2)}
+  .doc{color:var(--suave);font-size:.78rem;margin-top:4px}
+  footer{padding:18px 28px;color:var(--suave);font-size:.78rem;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>Radar de Cobranza</h1>
+  <div class="meta">Corte al 2026-09-11 &middot; 37 facturas pendientes &middot; 12 clientes</div>
+</header>
+<main>
+  <section class="kpis" id="kpis"></section>
+  <section class="grid">
+    <div class="card"><h2>Aging de cartera</h2><div class="chart"><canvas id="cAging"></canvas></div></div>
+    <div class="card"><h2>Top deudores (vencido)</h2><div class="chart"><canvas id="cTop"></canvas></div></div>
+  </section>
+  <div class="card" style="margin-bottom:22px">
+    <h2>Clientes por deuda</h2>
+    <table id="tCli">
+      <thead><tr><th>Cliente</th><th>RUT</th><th class="num">Facturas</th>
+      <th class="num">Saldo</th><th class="num">Vencido</th><th class="num">Atraso max.</th>
+      <th>Accion</th></tr></thead><tbody></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Facturas pendientes</h2>
+    <table id="tFac">
+      <thead><tr><th>Cliente</th><th>Factura</th><th>Vencimiento</th>
+      <th class="num">Atraso</th><th>Tramo</th><th class="num">Monto</th>
+      <th class="num">Saldo</th></tr></thead><tbody></tbody>
+    </table>
+    <div class="doc">Atraso en dias corridos respecto de la fecha de vencimiento. Saldo = monto - pagado.</div>
+  </div>
+</main>
+<footer>Generado por Radar de Cobranza v0.1 &middot; datos locales, sin servicios externos</footer>
+<script>
+const D = {"hoy": "2026-09-11", "kpis": {"por_cobrar": 186800498, "vencido": 159003721, "pct_vencido": 85.1, "dso": 99, "atraso_promedio": 86.8, "top_deudor": "Agroindustrial Maipo SA", "n_clientes": 12, "n_facturas": 37}, "aging": [{"tramo": "Corriente", "monto": 27796777}, {"tramo": "0-30 dias", "monto": 21278664}, {"tramo": "31-60 dias", "monto": 24227323}, {"tramo": "61-90 dias", "monto": 25495000}, {"tramo": "+90 dias", "monto": 88002734}], "ranking": [{"cliente": "Agroindustrial Maipo SA", "rut": "96.551.740-2", "email": "tesoreria@agromaipo.cl", "saldo": 29345935, "vencido": 29345935, "facturas": 6, "max_atraso": 144}, {"cliente": "Frigorifico Osorno SpA", "rut": "77.667.889-2", "email": "pagos@friosorno.cl", "saldo": 31855000, "vencido": 23150000, "facturas": 6, "max_atraso": 111}, {"cliente": "Supermercados Buin Ltda", "rut": "77.445.223-1", "email": "finanzas@supbuin.cl", "saldo": 21649000, "vencido": 21649000, "facturas": 3, "max_atraso": 93}, {"cliente": "Retail Sur Global SA", "rut": "96.770.114-9", "email": "pagos@retailsurglobal.cl", "saldo": 21435044, "vencido": 21435044, "facturas": 4, "max_atraso": 132}, {"cliente": "Clínica Los Robles", "rut": "78.112.667-3", "email": "administracion@clinrobles.cl", "saldo": 18032000, "vencido": 13343000, "facturas": 5, "max_atraso": 172}, {"cliente": "Servicios Electricos Coya", "rut": "77.201.559-8", "email": "admin@electricacoya.cl", "saldo": 13038439, "vencido": 13038439, "facturas": 2, "max_atraso": 136}, {"cliente": "Inmobiliaria Pehuen", "rut": "76.998.441-7", "email": "gerencia@pehuen.cl", "saldo": 10007639, "vencido": 10007639, "facturas": 2, "max_atraso": 92}, {"cliente": "Constructora Alerce SpA", "rut": "76.412.330-5", "email": "pagos@alerce.cl", "saldo": 8152000, "vencido": 8152000, "facturas": 1, "max_atraso": 88}, {"cliente": "Comercial Delta Norte", "rut": "79.334.881-0", "email": "cobranza@deltanorte.cl", "saldo": 6032664, "vencido": 6032664, "facturas": 2, "max_atraso": 138}, {"cliente": "Transportes Vinamar Ltda", "rut": "78.990.221-K", "email": "contabilidad@vinamar.cl", "saldo": 5715000, "vencido": 5715000, "facturas": 1, "max_atraso": 118}, {"cliente": "Distribuidora Bahia Azul", "rut": "79.554.012-6", "email": "cobranzas@bahiaazul.cl", "saldo": 13211000, "vencido": 4586000, "facturas": 2, "max_atraso": 142}, {"cliente": "Minera Andacollo SpA", "rut": "76.883.112-4", "email": "cuentas@mineraandacollo.cl", "saldo": 8326777, "vencido": 2549000, "facturas": 3, "max_atraso": 112}], "facturas": [{"cliente": "Clínica Los Robles", "rut": "78.112.667-3", "folio": "F-10562", "vencimiento": "2026-03-23", "atraso": 172, "monto": 4831000, "pagado": 0, "saldo": 4831000, "tramo": "+90 dias"}, {"cliente": "Clínica Los Robles", "rut": "78.112.667-3", "folio": "F-10581", "vencimiento": "2026-03-30", "atraso": 165, "monto": 5293000, "pagado": 0, "saldo": 5293000, "tramo": "+90 dias"}, {"cliente": "Agroindustrial Maipo SA", "rut": "96.551.740-2", "folio": "F-10465", "vencimiento": "2026-04-20", "atraso": 144, "monto": 6441000, "pagado": 0, "saldo": 6441000, "tramo": "+90 dias"}, {"cliente": "Agroindustrial Maipo SA", "rut": "96.551.740-2", "folio": "F-10458", "vencimiento": "2026-04-22", "atraso": 142, "monto": 5938000, "pagado": 1465487, "saldo": 4472513, "tramo": "+90 dias"}, {"cliente": "Distribuidora Bahia Azul", "rut": "79.554.012-6", "folio": "F-10634", "vencimiento": "2026-04-22", "atraso": 142, "monto": 4586000, "pagado": 0, "saldo": 4586000, "tramo": "+90 dias"}, {"cliente": "Comercial Delta Norte", "rut": "79.334.881-0", "folio": "F-10505", "vencimiento": "2026-04-26", "atraso": 138, "monto": 4627000, "pagado": 0, "saldo": 4627000, "tramo": "+90 dias"}, {"cliente": "Servicios Electricos Coya", "rut": "77.201.559-8", "folio": "F-10471", "vencimiento": "2026-04-28", "atraso": 136, "monto": 4980000, "pagado": 1612561, "saldo": 3367439, "tramo": "+90 dias"}, {"cliente": "Retail Sur Global SA", "rut": "96.770.114-9", "folio": "F-10560", "vencimiento": "2026-05-02", "atraso": 132, "monto": 7893000, "pagado": 3111956, "saldo": 4781044, "tramo": "+90 dias"}, {"cliente": "Servicios Electricos Coya", "rut": "77.201.559-8", "folio": "F-10488", "vencimiento": "2026-05-04", "atraso": 130, "monto": 9671000, "pagado": 0, "saldo": 9671000, "tramo": "+90 dias"}, {"cliente": "Transportes Vinamar Ltda", "rut": "78.990.221-K", "folio": "F-10421", "vencimiento": "2026-05-16", "atraso": 118, "monto": 5715000, "pagado": 0, "saldo": 5715000, "tramo": "+90 dias"}, {"cliente": "Minera Andacollo SpA", "rut": "76.883.112-4", "folio": "F-10510", "vencimiento": "2026-05-22", "atraso": 112, "monto": 873000, "pagado": 0, "saldo": 873000, "tramo": "+90 dias"}, {"cliente": "Frigorifico Osorno SpA", "rut": "77.667.889-2", "folio": "F-10669", "vencimiento": "2026-05-23", "atraso": 111, "monto": 1354000, "pagado": 0, "saldo": 1354000, "tramo": "+90 dias"}, {"cliente": "Minera Andacollo SpA", "rut": "76.883.112-4", "folio": "F-10529", "vencimiento": "2026-06-03", "atraso": 100, "monto": 1676000, "pagado": 0, "saldo": 1676000, "tramo": "+90 dias"}, {"cliente": "Retail Sur Global SA", "rut": "96.770.114-9", "folio": "F-10553", "vencimiento": "2026-06-06", "atraso": 97, "monto": 9386000, "pagado": 0, "saldo": 9386000, "tramo": "+90 dias"}, {"cliente": "Supermercados Buin Ltda", "rut": "77.445.223-1", "folio": "F-10542", "vencimiento": "2026-06-10", "atraso": 93, "monto": 6339000, "pagado": 0, "saldo": 6339000, "tramo": "+90 dias"}, {"cliente": "Inmobiliaria Pehuen", "rut": "76.998.441-7", "folio": "F-10610", "vencimiento": "2026-06-11", "atraso": 92, "monto": 6073000, "pagado": 2652361, "saldo": 3420639, "tramo": "+90 dias"}, {"cliente": "Agroindustrial Maipo SA", "rut": "96.551.740-2", "folio": "F-10442", "vencimiento": "2026-06-12", "atraso": 91, "monto": 7224000, "pagado": 3293901, "saldo": 3930099, "tramo": "+90 dias"}, {"cliente": "Supermercados Buin Ltda", "rut": "77.445.223-1", "folio": "F-10549", "vencimiento": "2026-06-12", "atraso": 91, "monto": 7239000, "pagado": 0, "saldo": 7239000, "tramo": "+90 dias"}, {"cliente": "Constructora Alerce SpA", "rut": "76.412.330-5", "folio": "F-10409", "vencimiento": "2026-06-15", "atraso": 88, "monto": 8152000, "pagado": 0, "saldo": 8152000, "tramo": "61-90 dias"}, {"cliente": "Agroindustrial Maipo SA", "rut": "96.551.740-2", "folio": "F-10433", "vencimiento": "2026-06-17", "atraso": 86, "monto": 7679000, "pagado": 0, "saldo": 7679000, "tramo": "61-90 dias"}, {"cliente": "Frigorifico Osorno SpA", "rut": "77.667.889-2", "folio": "F-10646", "vencimiento": "2026-06-30", "atraso": 73, "monto": 2690000, "pagado": 0, "saldo": 2690000, "tramo": "61-90 dias"}, {"cliente": "Frigorifico Osorno SpA", "rut": "77.667.889-2", "folio": "F-10662", "vencimiento": "2026-07-06", "atraso": 67, "monto": 6974000, "pagado": 0, "saldo": 6974000, "tramo": "61-90 dias"}, {"cliente": "Frigorifico Osorno SpA", "rut": "77.667.889-2", "folio": "F-10644", "vencimiento": "2026-07-16", "atraso": 57, "monto": 8820000, "pagado": 0, "saldo": 8820000, "tramo": "31-60 dias"}, {"cliente": "Agroindustrial Maipo SA", "rut": "96.551.740-2", "folio": "F-10439", "vencimiento": "2026-07-17", "atraso": 56, "monto": 7842000, "pagado": 2745677, "saldo": 5096323, "tramo": "31-60 dias"}, {"cliente": "Retail Sur Global SA", "rut": "96.770.114-9", "folio": "F-10554", "vencimiento": "2026-07-19", "atraso": 54, "monto": 1047000, "pagado": 0, "saldo": 1047000, "tramo": "31-60 dias"}, {"cliente": "Inmobiliaria Pehuen", "rut": "76.998.441-7", "folio": "F-10598", "vencimiento": "2026-08-02", "atraso": 40, "monto": 6587000, "pagado": 0, "saldo": 6587000, "tramo": "31-60 dias"}, {"cliente": "Clínica Los Robles", "rut": "78.112.667-3", "folio": "F-10584", "vencimiento": "2026-08-08", "atraso": 34, "monto": 2677000, "pagado": 0, "saldo": 2677000, "tramo": "31-60 dias"}, {"cliente": "Supermercados Buin Ltda", "rut": "77.445.223-1", "folio": "F-10548", "vencimiento": "2026-08-13", "atraso": 29, "monto": 8071000, "pagado": 0, "saldo": 8071000, "tramo": "0-30 dias"}, {"cliente": "Comercial Delta Norte", "rut": "79.334.881-0", "folio": "F-10498", "vencimiento": "2026-08-15", "atraso": 27, "monto": 3795000, "pagado": 2389336, "saldo": 1405664, "tramo": "0-30 dias"}, {"cliente": "Clínica Los Robles", "rut": "78.112.667-3", "folio": "F-10573", "vencimiento": "2026-08-19", "atraso": 23, "monto": 542000, "pagado": 0, "saldo": 542000, "tramo": "0-30 dias"}, {"cliente": "Frigorifico Osorno SpA", "rut": "77.667.889-2", "folio": "F-10658", "vencimiento": "2026-08-27", "atraso": 15, "monto": 3312000, "pagado": 0, "saldo": 3312000, "tramo": "0-30 dias"}, {"cliente": "Agroindustrial Maipo SA", "rut": "96.551.740-2", "folio": "F-10446", "vencimiento": "2026-09-04", "atraso": 7, "monto": 1727000, "pagado": 0, "saldo": 1727000, "tramo": "0-30 dias"}, {"cliente": "Retail Sur Global SA", "rut": "96.770.114-9", "folio": "F-10559", "vencimiento": "2026-09-09", "atraso": 2, "monto": 6221000, "pagado": 0, "saldo": 6221000, "tramo": "0-30 dias"}, {"cliente": "Minera Andacollo SpA", "rut": "76.883.112-4", "folio": "F-10524", "vencimiento": "2026-09-20", "atraso": -9, "monto": 7328000, "pagado": 1550223, "saldo": 5777777, "tramo": "Corriente"}, {"cliente": "Distribuidora Bahia Azul", "rut": "79.554.012-6", "folio": "F-10637", "vencimiento": "2026-09-28", "atraso": -17, "monto": 8625000, "pagado": 0, "saldo": 8625000, "tramo": "Corriente"}, {"cliente": "Frigorifico Osorno SpA", "rut": "77.667.889-2", "folio": "F-10648", "vencimiento": "2026-10-07", "atraso": -26, "monto": 8705000, "pagado": 0, "saldo": 8705000, "tramo": "Corriente"}, {"cliente": "Clínica Los Robles", "rut": "78.112.667-3", "folio": "F-10568", "vencimiento": "2026-10-09", "atraso": -28, "monto": 4689000, "pagado": 0, "saldo": 4689000, "tramo": "Corriente"}]};
+const clp = n => '$' + n.toLocaleString('es-CL');
+const clase = t => 'c-' + t.replace(/\s+/g,'').replace('Corriente','Corriente');
+
+// KPIs
+const k = D.kpis;
+document.getElementById('kpis').innerHTML = [
+  {l:'Por cobrar', v:clp(k.por_cobrar), s:'saldo pendiente total'},
+  {l:'Vencido', v:clp(k.vencido), s:k.pct_vencido+'% de la cartera', a:k.pct_vencido>30},
+  {l:'DSO', v:k.dso+' dias', s:'dias de venta en cartera'},
+  {l:'Atraso promedio', v:k.atraso_promedio+' dias', s:'solo facturas vencidas', a:k.atraso_promedio>30},
+  {l:'Top deudor', v:k.top_deudor, s:'mayor monto vencido'}
+].map(x=>`<div class="kpi${x.a?' alerta':''}"><div class="l">${x.l}</div>
+  <div class="v">${x.v}</div><div class="s">${x.s}</div></div>`).join('');
+
+// Aging
+new Chart(document.getElementById('cAging'), {
+  type:'bar',
+  data:{ labels:D.aging.map(a=>a.tramo),
+    datasets:[{ data:D.aging.map(a=>a.monto), backgroundColor:D.aging.map((a,i)=>
+      ['#2563eb','#eab308','#f97316','#dc2626','#7f1d1d'][i]), borderRadius:4, maxBarThickness:70 }]},
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false},
+      tooltip:{callbacks:{label:c=>clp(c.parsed.y)}} },
+    scales:{ y:{beginAtZero:true, ticks:{callback:v=>(v/1000000).toFixed(1)+' M'},
+      grid:{color:'#eef2f7'}}, x:{grid:{display:false}} } }
+});
+
+// Top deudores (ojo: NO usar 'top' como nombre de variable: colisiona con window.top)
+const topDeu = D.ranking.filter(c=>c.vencido>0).slice(0,10);
+new Chart(document.getElementById('cTop'), {
+  type:'bar',
+  data:{ labels:topDeu.map(c=>c.cliente.length>22?c.cliente.slice(0,21)+'...':c.cliente),
+    datasets:[{ data:topDeu.map(c=>c.vencido), backgroundColor:'#dc2626',
+      borderRadius:4, maxBarThickness:26 }]},
+  options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>clp(c.parsed.x)}} },
+    scales:{ x:{beginAtZero:true, ticks:{callback:v=>(v/1000000).toFixed(1)+' M'},
+      grid:{color:'#eef2f7'}}, y:{grid:{display:false}} } }
+});
+
+// Tabla clientes
+const accion = c => c.max_atraso>90 ? 'Cobranza judicial'
+  : c.max_atraso>60 ? 'Llamada gerencial'
+  : c.max_atraso>30 ? 'Llamada de cobranza'
+  : c.vencido>0 ? 'Recordatorio por correo' : '-';
+document.querySelector('#tCli tbody').innerHTML = D.ranking.map(c=>
+  `<tr><td>${c.cliente}${c.email?'<div class="doc">'+c.email+'</div>':''}</td>
+   <td>${c.rut||'-'}</td><td class="num">${c.facturas}</td>
+   <td class="num">${clp(c.saldo)}</td>
+   <td class="num">${c.vencido?clp(c.vencido):'-'}</td>
+   <td class="num">${c.max_atraso>0?c.max_atraso+' d':'-'}</td>
+   <td>${accion(c)}</td></tr>`).join('');
+
+// Tabla facturas
+document.querySelector('#tFac tbody').innerHTML = D.facturas.map(f=>
+  `<tr><td>${f.cliente}</td><td>${f.folio}</td><td>${f.vencimiento}</td>
+   <td class="num">${f.atraso<=0?'-':f.atraso}</td>
+   <td><span class="pill ${clase(f.tramo)}">${f.tramo}</span></td>
+   <td class="num">${clp(f.monto)}</td>
+   <td class="num">${clp(f.saldo)}</td></tr>`).join('');
+</script>
+</body>
+</html>

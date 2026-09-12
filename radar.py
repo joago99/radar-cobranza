@@ -1,0 +1,504 @@
+# -*- coding: utf-8 -*-
+"""
+Radar de Cobranza v0.1
+Convierte un listado de facturas (CSV) en un tablero de cobranza:
+- KPIs: total por cobrar, vencido, % vencido, DSO, atraso promedio, top deudor
+- Aging de cartera (corriente / 0-30 / 31-60 / 61-90 / +90)
+- Ranking de clientes por deuda vencida
+- Tabla con semaforo de atraso
+- CSV de recordatorios + texto de correo por cliente
+
+Sin dependencias externas: solo libreria estandar de Python 3.
+"""
+import argparse
+import csv
+import json
+import os
+import re
+import unicodedata
+from datetime import date, datetime
+
+# ---------------------------------------------------------------- utilidades
+
+ALIAS = {
+    "cliente": ["cliente", "nombre", "razon_social", "razon social", "nombre_cliente"],
+    "rut": ["rut", "rut_cliente", "documento", "id_cliente"],
+    "folio": ["folio", "numero", "n_factura", "numero_factura", "factura", "num"],
+    "emision": ["emision", "fecha_emision", "fecha emision", "fecha"],
+    "vencimiento": ["vencimiento", "fecha_vencimiento", "fecha vencimiento", "vence"],
+    "monto": ["monto", "total", "valor", "importe", "monto_total"],
+    "pagado": ["pagado", "abono", "pagos", "monto_pagado"],
+    "email": ["email", "correo", "e_mail", "mail"],
+}
+
+
+def norm(s):
+    """Normaliza un encabezado: minusculas, sin tildes, sin espacios raros."""
+    s = str(s).strip().lower()
+    s = "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
+    return re.sub(r"\s+", "_", s)
+
+
+def mapear_columnas(headers):
+    """Devuelve dict campo_logico -> indice de columna real."""
+    nh = [norm(h) for h in headers]
+    mapa = {}
+    for campo, opciones in ALIAS.items():
+        for op in opciones:
+            if op in nh:
+                mapa[campo] = nh.index(op)
+                break
+    return mapa
+
+
+def a_numero(v):
+    """Parsea montos en formato chileno (1.234.567 / 1.234,56) o simple."""
+    if v is None:
+        return 0.0
+    s = str(v).strip().replace("$", "").replace("\xa0", "").replace(" ", "")
+    if s in ("", "-", "nan", "None"):
+        return 0.0
+    s = s.replace("%", "")
+    if "," in s and "." in s:
+        s = s.replace(".", "").replace(",", ".") if s.rfind(",") > s.rfind(".") else s.replace(",", "")
+    elif "," in s:
+        entero, _, dec = s.partition(",")
+        s = entero.replace(".", "") + "." + dec
+    elif re.match(r"^-?\d{1,3}(\.\d{3})+$", s):
+        s = s.replace(".", "")
+    try:
+        return float(s)
+    except ValueError:
+        return 0.0
+
+
+FORMATOS = ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d", "%d-%m-%y", "%d/%m/%y")
+
+
+def a_fecha(v):
+    if isinstance(v, date):
+        return v
+    s = str(v).strip()
+    if not s or s.lower() in ("nan", "none"):
+        return None
+    s = s.split(" ")[0].split("T")[0]
+    for f in FORMATOS:
+        try:
+            return datetime.strptime(s, f).date()
+        except ValueError:
+            continue
+    return None
+
+
+def clp(x):
+    return "$" + f"{round(x):,}".replace(",", ".")
+
+
+# ---------------------------------------------------------------- calculo
+
+
+def leer_facturas(path):
+    with open(path, "r", encoding="utf-8-sig", newline="") as fh:
+        muestra = fh.read(4096)
+        fh.seek(0)
+        try:
+            dialecto = csv.Sniffer().sniff(muestra, delimiters=",;\t|")
+        except csv.Error:
+            dialecto = csv.excel
+        filas = list(csv.reader(fh, dialecto))
+    if not filas:
+        raise SystemExit("El archivo no tiene filas.")
+    mapa = mapear_columnas(filas[0])
+    for obligatorio in ("cliente", "vencimiento", "monto"):
+        if obligatorio not in mapa:
+            raise SystemExit(
+                f"Falta una columna obligatoria: '{obligatorio}'. "
+                f"Encontradas: {filas[0]}"
+            )
+    facturas = []
+    for n, fila in enumerate(filas[1:], start=2):
+        if not any(c.strip() for c in fila):
+            continue
+
+        def val(campo, default=""):
+            i = mapa.get(campo)
+            if i is None or i >= len(fila):
+                return default
+            return fila[i]
+
+        monto = a_numero(val("monto"))
+        pagado = a_numero(val("pagado"))
+        venc = a_fecha(val("vencimiento"))
+        if venc is None or monto <= 0:
+            print(f"  fila {n} omitida (sin vencimiento o monto invalido)")
+            continue
+        facturas.append({
+            "cliente": (val("cliente") or "SIN NOMBRE").strip(),
+            "rut": (val("rut") or "").strip(),
+            "email": (val("email") or "").strip(),
+            "folio": (val("folio") or str(n)).strip(),
+            "emision": a_fecha(val("emision")),
+            "vencimiento": venc,
+            "monto": monto,
+            "pagado": pagado,
+            "saldo": max(monto - pagado, 0.0),
+        })
+    return facturas
+
+
+def analizar(facturas, hoy):
+    """Devuelve estructura lista para el tablero."""
+    pendientes = [f for f in facturas if f["saldo"] > 0.5]
+    for f in pendientes:
+        f["atraso"] = (hoy - f["vencimiento"]).days
+        f["corriente"] = f["atraso"] <= 0
+
+    def tramo(d):
+        if d <= 0:
+            return "Corriente"
+        if d <= 30:
+            return "0-30 dias"
+        if d <= 60:
+            return "31-60 dias"
+        if d <= 90:
+            return "61-90 dias"
+        return "+90 dias"
+
+    for f in pendientes:
+        f["tramo"] = tramo(f["atraso"])
+
+    vencidas = [f for f in pendientes if f["atraso"] > 0]
+
+    # DSO: cartera / facturacion diaria del periodo observado
+    fechas = [f["emision"] for f in facturas if f["emision"]]
+    if fechas:
+        dias = max((hoy - min(fechas)).days, 1)
+    else:
+        dias = 365
+    facturado = sum(f["monto"] for f in facturas)
+    dso = (sum(f["saldo"] for f in pendientes) / (facturado / dias)) if facturado else 0.0
+
+    # ranking por cliente
+    por_cliente = {}
+    for f in vencidas:
+        c = por_cliente.setdefault(f["cliente"], {
+            "cliente": f["cliente"], "rut": f["rut"], "email": f["email"],
+            "saldo": 0.0, "vencido": 0.0, "facturas": 0,
+            "max_atraso": 0, "facturas_detalle": [],
+        })
+        c["saldo"] += f["saldo"]
+        c["vencido"] += f["saldo"]
+        c["facturas"] += 1
+        c["max_atraso"] = max(c["max_atraso"], f["atraso"])
+        c["facturas_detalle"].append(f)
+
+    for f in pendientes:
+        if f["atraso"] <= 0:
+            c = por_cliente.setdefault(f["cliente"], {
+                "cliente": f["cliente"], "rut": f["rut"], "email": f["email"],
+                "saldo": 0.0, "vencido": 0.0, "facturas": 0,
+                "max_atraso": 0, "facturas_detalle": [],
+            })
+            c["saldo"] += f["saldo"]
+            c["facturas"] += 1
+
+    ranking = sorted(por_cliente.values(), key=lambda c: (-c["vencido"], -c["saldo"]))
+
+    tramos = ["Corriente", "0-30 dias", "31-60 dias", "61-90 dias", "+90 dias"]
+    aging = [{"tramo": t, "monto": round(sum(f["saldo"] for f in pendientes if f["tramo"] == t))}
+             for t in tramos]
+
+    total = sum(f["saldo"] for f in pendientes)
+    vencido = sum(f["saldo"] for f in vencidas)
+    atraso_prom = (sum(f["atraso"] for f in vencidas) / len(vencidas)) if vencidas else 0.0
+
+    return {
+        "hoy": hoy.isoformat(),
+        "kpis": {
+            "por_cobrar": round(total),
+            "vencido": round(vencido),
+            "pct_vencido": round((vencido / total * 100) if total else 0, 1),
+            "dso": round(dso),
+            "atraso_promedio": round(atraso_prom, 1),
+            "top_deudor": ranking[0]["cliente"] if ranking and ranking[0]["vencido"] > 0 else "-",
+            "n_clientes": len([c for c in ranking if c["saldo"] > 0]),
+            "n_facturas": len(pendientes),
+        },
+        "aging": aging,
+        "ranking": [
+            {"cliente": c["cliente"], "rut": c["rut"], "email": c["email"],
+             "saldo": round(c["saldo"]), "vencido": round(c["vencido"]),
+             "facturas": c["facturas"], "max_atraso": c["max_atraso"]}
+            for c in ranking if c["saldo"] > 0
+        ],
+        "facturas": [
+            {"cliente": f["cliente"], "rut": f["rut"], "folio": f["folio"],
+             "vencimiento": f["vencimiento"].isoformat(), "atraso": f["atraso"],
+             "monto": round(f["monto"]), "pagado": round(f["pagado"]),
+             "saldo": round(f["saldo"]), "tramo": f["tramo"]}
+            for f in sorted(pendientes, key=lambda x: -x["atraso"])
+        ],
+    }
+
+
+# ---------------------------------------------------------------- salidas
+
+
+def escribir_recordatorios(datos, carpeta):
+    ruta = os.path.join(carpeta, "recordatorios.csv")
+    with open(ruta, "w", encoding="utf-8-sig", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["cliente", "email", "facturas_vencidas", "monto_vencido",
+                    "max_atraso_dias", "accion_sugerida"])
+        for c in datos["ranking"]:
+            if c["vencido"] <= 0:
+                continue
+            if c["max_atraso"] > 90:
+                accion = "Cobranza judicial / carta certificada"
+            elif c["max_atraso"] > 60:
+                accion = "Llamada gerencial + acuerdo de pago"
+            elif c["max_atraso"] > 30:
+                accion = "Llamada de cobranza"
+            else:
+                accion = "Recordatorio por correo"
+            w.writerow([c["cliente"], c["email"], c["facturas"], c["vencido"],
+                        c["max_atraso"], accion])
+    return ruta
+
+
+PLANTILLA_CORREO = """Estimado(a) {cliente}:
+
+Le escribimos respecto de {n} factura(s) pendiente(s) de pago por un total de {monto}.
+
+Detalle:
+{detalle}
+
+La deuda presenta {max_atraso} dia(s) de atraso. Agradeceremos regularizar el pago
+o bien responder este correo para acordar una fecha.
+
+Quedamos atentos.
+
+--
+Area de Cobranza
+"""
+
+
+def escribir_correos(datos, carpeta):
+    destino = os.path.join(carpeta, "correos")
+    os.makedirs(destino, exist_ok=True)
+    generados = 0
+    for c in datos["ranking"]:
+        if c["vencido"] <= 0:
+            continue
+        detalle = "\n".join(
+            f"  - Factura {f['folio']} vence {f['vencimiento']}: {clp(f['saldo'])} "
+            f"({f['atraso']} dias)"
+            for f in sorted(
+                [x for x in datos["facturas"]
+                 if x["cliente"] == c["cliente"] and x["atraso"] > 0],
+                key=lambda x: -x["atraso"])
+        )
+        cuerpo = PLANTILLA_CORREO.format(
+            cliente=c["cliente"], n=c["facturas"], monto=clp(c["vencido"]),
+            detalle=detalle, max_atraso=c["max_atraso"])
+        nombre = re.sub(r"[^A-Za-z0-9]+", "_", c["cliente"])[:40] + ".txt"
+        with open(os.path.join(destino, nombre), "w", encoding="utf-8") as fh:
+            fh.write(cuerpo)
+        generados += 1
+    return destino, generados
+
+
+PLANTILLA_HTML = """<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar de Cobranza - __TITULO__</title>
+<script src="../vendor/chart.umd.min.js"></script>
+<style>
+  :root{--bg:#f8fafc;--card:#ffffff;--texto:#0f172a;--suave:#64748b;--borde:#e2e8f0;
+        --azul:#2563eb;--amar:#eab308;--nara:#f97316;--rojo:#dc2626;--rojo2:#7f1d1d}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--texto);
+       font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+  header{background:#fff;border-bottom:1px solid var(--borde);padding:18px 28px;
+         display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+  h1{margin:0;font-size:1.25rem;letter-spacing:-.01em}
+  header .meta{color:var(--suave);font-size:.82rem}
+  main{padding:22px 28px;max-width:1400px;margin:0 auto}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px}
+  .kpi{background:var(--card);border:1px solid var(--borde);border-radius:10px;padding:16px 18px}
+  .kpi .l{color:var(--suave);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em}
+  .kpi .v{font-size:1.6rem;font-weight:600;margin-top:6px;font-variant-numeric:tabular-nums}
+  .kpi .s{color:var(--suave);font-size:.78rem;margin-top:2px}
+  .kpi.alerta .v{color:var(--rojo)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--borde);border-radius:10px;padding:18px}
+  .card h2{margin:0 0 14px;font-size:.95rem;font-weight:600}
+  .chart{height:280px}
+  table{width:100%;border-collapse:collapse;font-size:.86rem}
+  th{text-align:left;color:var(--suave);font-weight:600;font-size:.74rem;
+     text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid var(--borde)}
+  td{padding:9px 10px;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums}
+  tr:hover td{background:#f8fafc}
+  .num{text-align:right}
+  .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.74rem;font-weight:600;color:#fff}
+  .c-Corriente{background:var(--azul)}.c-0-30{background:var(--amar)}
+  .c-31-60{background:var(--nara)}.c-61-90{background:var(--rojo)}.c-90{background:var(--rojo2)}
+  .c-0-30dias{background:var(--amar)}.c-31-60dias{background:var(--nara)}
+  .c-61-90dias{background:var(--rojo)}.c-90dias{background:var(--rojo2)}
+  .doc{color:var(--suave);font-size:.78rem;margin-top:4px}
+  footer{padding:18px 28px;color:var(--suave);font-size:.78rem;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>Radar de Cobranza</h1>
+  <div class="meta">Corte al __FECHA__ &middot; __NFACT__ facturas pendientes &middot; __NCLI__ clientes</div>
+</header>
+<main>
+  <section class="kpis" id="kpis"></section>
+  <section class="grid">
+    <div class="card"><h2>Aging de cartera</h2><div class="chart"><canvas id="cAging"></canvas></div></div>
+    <div class="card"><h2>Top deudores (vencido)</h2><div class="chart"><canvas id="cTop"></canvas></div></div>
+  </section>
+  <div class="card" style="margin-bottom:22px">
+    <h2>Clientes por deuda</h2>
+    <table id="tCli">
+      <thead><tr><th>Cliente</th><th>RUT</th><th class="num">Facturas</th>
+      <th class="num">Saldo</th><th class="num">Vencido</th><th class="num">Atraso max.</th>
+      <th>Accion</th></tr></thead><tbody></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Facturas pendientes</h2>
+    <table id="tFac">
+      <thead><tr><th>Cliente</th><th>Factura</th><th>Vencimiento</th>
+      <th class="num">Atraso</th><th>Tramo</th><th class="num">Monto</th>
+      <th class="num">Saldo</th></tr></thead><tbody></tbody>
+    </table>
+    <div class="doc">Atraso en dias corridos respecto de la fecha de vencimiento. Saldo = monto - pagado.</div>
+  </div>
+</main>
+<footer>Generado por Radar de Cobranza v0.1 &middot; datos locales, sin servicios externos</footer>
+<script>
+const D = __DATA__;
+const clp = n => '$' + n.toLocaleString('es-CL');
+const clase = t => 'c-' + t.replace(/\\s+/g,'').replace('Corriente','Corriente');
+
+// KPIs
+const k = D.kpis;
+document.getElementById('kpis').innerHTML = [
+  {l:'Por cobrar', v:clp(k.por_cobrar), s:'saldo pendiente total'},
+  {l:'Vencido', v:clp(k.vencido), s:k.pct_vencido+'% de la cartera', a:k.pct_vencido>30},
+  {l:'DSO', v:k.dso+' dias', s:'dias de venta en cartera'},
+  {l:'Atraso promedio', v:k.atraso_promedio+' dias', s:'solo facturas vencidas', a:k.atraso_promedio>30},
+  {l:'Top deudor', v:k.top_deudor, s:'mayor monto vencido'}
+].map(x=>`<div class="kpi${x.a?' alerta':''}"><div class="l">${x.l}</div>
+  <div class="v">${x.v}</div><div class="s">${x.s}</div></div>`).join('');
+
+// Aging
+new Chart(document.getElementById('cAging'), {
+  type:'bar',
+  data:{ labels:D.aging.map(a=>a.tramo),
+    datasets:[{ data:D.aging.map(a=>a.monto), backgroundColor:D.aging.map((a,i)=>
+      ['#2563eb','#eab308','#f97316','#dc2626','#7f1d1d'][i]), borderRadius:4, maxBarThickness:70 }]},
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false},
+      tooltip:{callbacks:{label:c=>clp(c.parsed.y)}} },
+    scales:{ y:{beginAtZero:true, ticks:{callback:v=>(v/1000000).toFixed(1)+' M'},
+      grid:{color:'#eef2f7'}}, x:{grid:{display:false}} } }
+});
+
+// Top deudores (ojo: NO usar 'top' como nombre de variable: colisiona con window.top)
+const topDeu = D.ranking.filter(c=>c.vencido>0).slice(0,10);
+new Chart(document.getElementById('cTop'), {
+  type:'bar',
+  data:{ labels:topDeu.map(c=>c.cliente.length>22?c.cliente.slice(0,21)+'...':c.cliente),
+    datasets:[{ data:topDeu.map(c=>c.vencido), backgroundColor:'#dc2626',
+      borderRadius:4, maxBarThickness:26 }]},
+  options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>clp(c.parsed.x)}} },
+    scales:{ x:{beginAtZero:true, ticks:{callback:v=>(v/1000000).toFixed(1)+' M'},
+      grid:{color:'#eef2f7'}}, y:{grid:{display:false}} } }
+});
+
+// Tabla clientes
+const accion = c => c.max_atraso>90 ? 'Cobranza judicial'
+  : c.max_atraso>60 ? 'Llamada gerencial'
+  : c.max_atraso>30 ? 'Llamada de cobranza'
+  : c.vencido>0 ? 'Recordatorio por correo' : '-';
+document.querySelector('#tCli tbody').innerHTML = D.ranking.map(c=>
+  `<tr><td>${c.cliente}${c.email?'<div class="doc">'+c.email+'</div>':''}</td>
+   <td>${c.rut||'-'}</td><td class="num">${c.facturas}</td>
+   <td class="num">${clp(c.saldo)}</td>
+   <td class="num">${c.vencido?clp(c.vencido):'-'}</td>
+   <td class="num">${c.max_atraso>0?c.max_atraso+' d':'-'}</td>
+   <td>${accion(c)}</td></tr>`).join('');
+
+// Tabla facturas
+document.querySelector('#tFac tbody').innerHTML = D.facturas.map(f=>
+  `<tr><td>${f.cliente}</td><td>${f.folio}</td><td>${f.vencimiento}</td>
+   <td class="num">${f.atraso<=0?'-':f.atraso}</td>
+   <td><span class="pill ${clase(f.tramo)}">${f.tramo}</span></td>
+   <td class="num">${clp(f.monto)}</td>
+   <td class="num">${clp(f.saldo)}</td></tr>`).join('');
+</script>
+</body>
+</html>
+"""
+
+
+def escribir_dashboard(datos, carpeta, titulo):
+    html = (PLANTILLA_HTML
+            .replace("__DATA__", json.dumps(datos, ensure_ascii=False))
+            .replace("__FECHA__", datos["hoy"])
+            .replace("__TITULO__", titulo)
+            .replace("__NFACT__", str(datos["kpis"]["n_facturas"]))
+            .replace("__NCLI__", str(datos["kpis"]["n_clientes"])))
+    ruta = os.path.join(carpeta, "radar.html")
+    with open(ruta, "w", encoding="utf-8") as fh:
+        fh.write(html)
+    return ruta
+
+
+# ---------------------------------------------------------------- main
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Radar de Cobranza v0.1")
+    ap.add_argument("--input", "-i", default="datos/facturas_demo.csv",
+                    help="CSV de facturas")
+    ap.add_argument("--out", "-o", default="salida", help="carpeta de salida")
+    ap.add_argument("--hoy", help="fecha de corte YYYY-MM-DD (por defecto hoy)")
+    ap.add_argument("--titulo", default="Cartera", help="nombre de la cartera/empresa")
+    args = ap.parse_args()
+
+    hoy = a_fecha(args.hoy) if args.hoy else date.today()
+    os.makedirs(args.out, exist_ok=True)
+
+    print(f"Leyendo {args.input}")
+    facturas = leer_facturas(args.input)
+    print(f"  {len(facturas)} facturas leidas")
+    datos = analizar(facturas, hoy)
+
+    r1 = escribir_dashboard(datos, args.out, args.titulo)
+    r2 = escribir_recordatorios(datos, args.out)
+    carpeta_correos, n = escribir_correos(datos, args.out)
+
+    k = datos["kpis"]
+    print("\n--- RESUMEN ---")
+    print(f"  Por cobrar      : {clp(k['por_cobrar'])}")
+    print(f"  Vencido         : {clp(k['vencido'])} ({k['pct_vencido']}%)")
+    print(f"  DSO             : {k['dso']} dias")
+    print(f"  Atraso promedio : {k['atraso_promedio']} dias")
+    print(f"  Top deudor      : {k['top_deudor']}")
+    print("\n--- ARCHIVOS ---")
+    print(f"  Tablero   : {r1}")
+    print(f"  Recordatorios: {r2}")
+    print(f"  Correos   : {carpeta_correos} ({n} borradores)")
+
+
+if __name__ == "__main__":
+    main()
