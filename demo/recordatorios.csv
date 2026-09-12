@@ -1,0 +1,13 @@
+﻿cliente,email,facturas_vencidas,monto_vencido,max_atraso_dias,accion_sugerida
+Retail Sur Global SA,pagos@retailsurglobal.cl,4,253294600,132,Cobranza judicial / carta certificada
+Minera Andacollo SpA,cuentas@mineraandacollo.cl,3,31002374,112,Cobranza judicial / carta certificada
+Agroindustrial Maipo SA,tesoreria@agromaipo.cl,6,29345935,144,Cobranza judicial / carta certificada
+Frigorifico Osorno SpA,pagos@friosorno.cl,6,23150000,111,Cobranza judicial / carta certificada
+Supermercados Buin Ltda,finanzas@supbuin.cl,3,21649000,93,Cobranza judicial / carta certificada
+Clínica Los Robles,administracion@clinrobles.cl,5,13343000,172,Cobranza judicial / carta certificada
+Servicios Electricos Coya,admin@electricacoya.cl,2,13038439,136,Cobranza judicial / carta certificada
+Inmobiliaria Pehuen,gerencia@pehuen.cl,2,10007639,92,Cobranza judicial / carta certificada
+Constructora Alerce SpA,pagos@alerce.cl,1,8152000,88,Llamada gerencial + acuerdo de pago
+Comercial Delta Norte,cobranza@deltanorte.cl,2,6032664,138,Cobranza judicial / carta certificada
+Transportes Vinamar Ltda,contabilidad@vinamar.cl,1,5715000,118,Cobranza judicial / carta certificada
+Distribuidora Bahia Azul,cobranzas@bahiaazul.cl,2,4586000,142,Cobranza judicial / carta certificada
