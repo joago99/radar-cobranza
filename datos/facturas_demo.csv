@@ -1,73 +1,73 @@
-﻿cliente,rut,email,numero,emision,vencimiento,monto,pagado
-Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10562,2026-02-21,2026-03-23,4831000,0
-Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10581,2026-02-28,2026-03-30,5293000,0
-Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10613,2026-02-28,2026-03-30,5578000,5578000
-Transportes Vinamar Ltda,78.990.221-K,contabilidad@vinamar.cl,F-10429,2026-03-03,2026-04-02,5653000,5653000
-Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10465,2026-03-06,2026-04-20,6441000,0
-Supermercados Buin Ltda,77.445.223-1,finanzas@supbuin.cl,F-10532,2026-03-21,2026-04-20,6908000,6908000
-Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10458,2026-03-08,2026-04-22,5938000,1465487
-Distribuidora Bahia Azul,79.554.012-6,cobranzas@bahiaazul.cl,F-10634,2026-03-08,2026-04-22,4586000,0
-Comercial Delta Norte,79.334.881-0,cobranza@deltanorte.cl,F-10505,2026-03-27,2026-04-26,4627000,0
-Servicios Electricos Coya,77.201.559-8,admin@electricacoya.cl,F-10469,2026-03-14,2026-04-28,495000,495000
-Servicios Electricos Coya,77.201.559-8,admin@electricacoya.cl,F-10471,2026-03-29,2026-04-28,4980000,1612561
-Retail Sur Global SA,96.770.114-9,pagos@retailsurglobal.cl,F-10560,2026-03-18,2026-05-02,7893000,3111956
-Servicios Electricos Coya,77.201.559-8,admin@electricacoya.cl,F-10488,2026-03-05,2026-05-04,9671000,0
-Constructora Alerce SpA,76.412.330-5,pagos@alerce.cl,F-10413,2026-04-05,2026-05-05,5774000,5774000
-Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10623,2026-04-11,2026-05-11,2646000,2646000
-Transportes Vinamar Ltda,78.990.221-K,contabilidad@vinamar.cl,F-10421,2026-04-16,2026-05-16,5715000,0
-Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10510,2026-03-23,2026-05-22,873000,0
-Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10669,2026-04-23,2026-05-23,1354000,0
-Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10603,2026-04-26,2026-05-26,5343000,5343000
-Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10529,2026-04-19,2026-06-03,1676000,0
-Retail Sur Global SA,96.770.114-9,pagos@retailsurglobal.cl,F-10553,2026-03-08,2026-06-06,9386000,0
-Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10509,2026-04-11,2026-06-10,4070000,4070000
-Supermercados Buin Ltda,77.445.223-1,finanzas@supbuin.cl,F-10542,2026-04-26,2026-06-10,6339000,0
-Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10610,2026-05-12,2026-06-11,6073000,2652361
-Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10442,2026-04-28,2026-06-12,7224000,3293901
-Supermercados Buin Ltda,77.445.223-1,finanzas@supbuin.cl,F-10549,2026-04-28,2026-06-12,7239000,0
-Constructora Alerce SpA,76.412.330-5,pagos@alerce.cl,F-10409,2026-05-16,2026-06-15,8152000,0
-Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10433,2026-04-18,2026-06-17,7679000,0
-Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10520,2026-04-30,2026-06-29,4853000,4853000
-Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10646,2026-05-31,2026-06-30,2690000,0
-Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10579,2026-06-04,2026-07-04,5503000,5503000
-Transportes Vinamar Ltda,78.990.221-K,contabilidad@vinamar.cl,F-10424,2026-04-06,2026-07-05,6362000,6362000
-Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10662,2026-05-07,2026-07-06,6974000,0
-Distribuidora Bahia Azul,79.554.012-6,cobranzas@bahiaazul.cl,F-10642,2026-06-13,2026-07-13,6669000,6669000
-Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10644,2026-06-16,2026-07-16,8820000,0
-Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10439,2026-06-17,2026-07-17,7842000,2745677
-Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10620,2026-04-19,2026-07-18,4873000,4873000
-Retail Sur Global SA,96.770.114-9,pagos@retailsurglobal.cl,F-10554,2026-06-04,2026-07-19,1047000,0
-Servicios Electricos Coya,77.201.559-8,admin@electricacoya.cl,F-10482,2026-06-22,2026-07-22,8080000,8080000
-Servicios Electricos Coya,77.201.559-8,admin@electricacoya.cl,F-10475,2026-05-24,2026-07-23,1047000,1047000
-Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10591,2026-06-10,2026-07-25,5462000,5462000
-Comercial Delta Norte,79.334.881-0,cobranza@deltanorte.cl,F-10493,2026-04-30,2026-07-29,2016000,2016000
-Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10598,2026-06-03,2026-08-02,6587000,0
-Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10584,2026-07-09,2026-08-08,2677000,0
-Supermercados Buin Ltda,77.445.223-1,finanzas@supbuin.cl,F-10548,2026-07-14,2026-08-13,8071000,0
-Comercial Delta Norte,79.334.881-0,cobranza@deltanorte.cl,F-10498,2026-05-17,2026-08-15,3795000,2389336
-Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10573,2026-07-20,2026-08-19,542000,0
-Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10459,2026-06-24,2026-08-23,6916000,6916000
-Servicios Electricos Coya,77.201.559-8,admin@electricacoya.cl,F-10490,2026-07-25,2026-08-24,1958000,1958000
-Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10658,2026-07-13,2026-08-27,3312000,0
-Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10517,2026-06-05,2026-09-03,3747000,3747000
-Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10446,2026-07-21,2026-09-04,1727000,0
-Supermercados Buin Ltda,77.445.223-1,finanzas@supbuin.cl,F-10537,2026-07-21,2026-09-04,7629000,7629000
-Retail Sur Global SA,96.770.114-9,pagos@retailsurglobal.cl,F-10559,2026-07-11,2026-09-09,6221000,0
-Distribuidora Bahia Azul,79.554.012-6,cobranzas@bahiaazul.cl,F-10638,2026-07-12,2026-09-10,1586000,1586000
-Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10516,2026-08-14,2026-09-13,6126000,6126000
-Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10511,2026-08-04,2026-09-18,5999000,5999000
-Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10524,2026-08-06,2026-09-20,7328000,1550223
-Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10652,2026-07-22,2026-09-20,9744000,9744000
-Constructora Alerce SpA,76.412.330-5,pagos@alerce.cl,F-10406,2026-08-08,2026-09-22,5828000,5828000
-Constructora Alerce SpA,76.412.330-5,pagos@alerce.cl,F-10401,2026-07-25,2026-09-23,6477000,6477000
-Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10676,2026-08-11,2026-09-25,2869000,2869000
-Distribuidora Bahia Azul,79.554.012-6,cobranzas@bahiaazul.cl,F-10637,2026-06-30,2026-09-28,8625000,0
-Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10648,2026-08-08,2026-10-07,8705000,0
-Constructora Alerce SpA,76.412.330-5,pagos@alerce.cl,F-10408,2026-08-10,2026-10-09,4261000,4261000
-Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10568,2026-08-10,2026-10-09,4689000,0
-Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10629,2026-08-16,2026-10-15,3380000,3380000
-Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10514,2026-07-25,2026-10-23,1246000,1246000
-Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10577,2026-07-26,2026-10-24,8148000,8148000
-Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10624,2026-08-07,2026-11-05,4585000,4585000
-Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10453,2026-08-13,2026-11-11,5735000,5735000
-Transportes Vinamar Ltda,78.990.221-K,contabilidad@vinamar.cl,F-10416,2026-08-21,2026-11-19,8453000,8453000
+﻿cliente,rut,email,numero,emision,vencimiento,moneda,monto,pagado
+Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10562,2026-02-21,2026-03-23,CLP,4831000,0
+Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10581,2026-02-28,2026-03-30,CLP,5293000,0
+Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10613,2026-02-28,2026-03-30,CLP,5578000,5578000
+Transportes Vinamar Ltda,78.990.221-K,contabilidad@vinamar.cl,F-10429,2026-03-03,2026-04-02,CLP,5653000,5653000
+Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10465,2026-03-06,2026-04-20,CLP,6441000,0
+Supermercados Buin Ltda,77.445.223-1,finanzas@supbuin.cl,F-10532,2026-03-21,2026-04-20,CLP,6908000,6908000
+Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10458,2026-03-08,2026-04-22,CLP,5938000,1465487
+Distribuidora Bahia Azul,79.554.012-6,cobranzas@bahiaazul.cl,F-10634,2026-03-08,2026-04-22,CLP,4586000,0
+Comercial Delta Norte,79.334.881-0,cobranza@deltanorte.cl,F-10505,2026-03-27,2026-04-26,CLP,4627000,0
+Servicios Electricos Coya,77.201.559-8,admin@electricacoya.cl,F-10469,2026-03-14,2026-04-28,CLP,495000,495000
+Servicios Electricos Coya,77.201.559-8,admin@electricacoya.cl,F-10471,2026-03-29,2026-04-28,CLP,4980000,1612561
+Retail Sur Global SA,96.770.114-9,pagos@retailsurglobal.cl,F-10560,2026-03-18,2026-05-02,USD,96759,38149
+Servicios Electricos Coya,77.201.559-8,admin@electricacoya.cl,F-10488,2026-03-05,2026-05-04,CLP,9671000,0
+Constructora Alerce SpA,76.412.330-5,pagos@alerce.cl,F-10413,2026-04-05,2026-05-05,CLP,5774000,5774000
+Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10623,2026-04-11,2026-05-11,CLP,2646000,2646000
+Transportes Vinamar Ltda,78.990.221-K,contabilidad@vinamar.cl,F-10421,2026-04-16,2026-05-16,CLP,5715000,0
+Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10510,2026-03-23,2026-05-22,USD,11221,0
+Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10669,2026-04-23,2026-05-23,CLP,1354000,0
+Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10603,2026-04-26,2026-05-26,CLP,5343000,5343000
+Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10529,2026-04-19,2026-06-03,USD,21006,0
+Retail Sur Global SA,96.770.114-9,pagos@retailsurglobal.cl,F-10553,2026-03-08,2026-06-06,USD,114956,0
+Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10509,2026-04-11,2026-06-10,USD,50176,50176
+Supermercados Buin Ltda,77.445.223-1,finanzas@supbuin.cl,F-10542,2026-04-26,2026-06-10,CLP,6339000,0
+Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10610,2026-05-12,2026-06-11,CLP,6073000,2652361
+Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10442,2026-04-28,2026-06-12,CLP,7224000,3293901
+Supermercados Buin Ltda,77.445.223-1,finanzas@supbuin.cl,F-10549,2026-04-28,2026-06-12,CLP,7239000,0
+Constructora Alerce SpA,76.412.330-5,pagos@alerce.cl,F-10409,2026-05-16,2026-06-15,CLP,8152000,0
+Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10433,2026-04-18,2026-06-17,CLP,7679000,0
+Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10520,2026-04-30,2026-06-29,USD,59726,59726
+Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10646,2026-05-31,2026-06-30,CLP,2690000,0
+Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10579,2026-06-04,2026-07-04,CLP,5503000,5503000
+Transportes Vinamar Ltda,78.990.221-K,contabilidad@vinamar.cl,F-10424,2026-04-06,2026-07-05,CLP,6362000,6362000
+Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10662,2026-05-07,2026-07-06,CLP,6974000,0
+Distribuidora Bahia Azul,79.554.012-6,cobranzas@bahiaazul.cl,F-10642,2026-06-13,2026-07-13,CLP,6669000,6669000
+Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10644,2026-06-16,2026-07-16,CLP,8820000,0
+Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10439,2026-06-17,2026-07-17,CLP,7842000,2745677
+Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10620,2026-04-19,2026-07-18,CLP,4873000,4873000
+Retail Sur Global SA,96.770.114-9,pagos@retailsurglobal.cl,F-10554,2026-06-04,2026-07-19,USD,13342,0
+Servicios Electricos Coya,77.201.559-8,admin@electricacoya.cl,F-10482,2026-06-22,2026-07-22,CLP,8080000,8080000
+Servicios Electricos Coya,77.201.559-8,admin@electricacoya.cl,F-10475,2026-05-24,2026-07-23,CLP,1047000,1047000
+Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10591,2026-06-10,2026-07-25,CLP,5462000,5462000
+Comercial Delta Norte,79.334.881-0,cobranza@deltanorte.cl,F-10493,2026-04-30,2026-07-29,CLP,2016000,2016000
+Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10598,2026-06-03,2026-08-02,CLP,6587000,0
+Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10584,2026-07-09,2026-08-08,CLP,2677000,0
+Supermercados Buin Ltda,77.445.223-1,finanzas@supbuin.cl,F-10548,2026-07-14,2026-08-13,CLP,8071000,0
+Comercial Delta Norte,79.334.881-0,cobranza@deltanorte.cl,F-10498,2026-05-17,2026-08-15,CLP,3795000,2389336
+Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10573,2026-07-20,2026-08-19,CLP,542000,0
+Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10459,2026-06-24,2026-08-23,CLP,6916000,6916000
+Servicios Electricos Coya,77.201.559-8,admin@electricacoya.cl,F-10490,2026-07-25,2026-08-24,CLP,1958000,1958000
+Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10658,2026-07-13,2026-08-27,CLP,3312000,0
+Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10517,2026-06-05,2026-09-03,USD,46243,46243
+Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10446,2026-07-21,2026-09-04,CLP,1727000,0
+Supermercados Buin Ltda,77.445.223-1,finanzas@supbuin.cl,F-10537,2026-07-21,2026-09-04,CLP,7629000,7629000
+Retail Sur Global SA,96.770.114-9,pagos@retailsurglobal.cl,F-10559,2026-07-11,2026-09-09,USD,76392,0
+Distribuidora Bahia Azul,79.554.012-6,cobranzas@bahiaazul.cl,F-10638,2026-07-12,2026-09-10,CLP,1586000,1586000
+Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10516,2026-08-14,2026-09-13,USD,75232,75232
+Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10511,2026-08-04,2026-09-18,USD,73684,73684
+Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10524,2026-08-06,2026-09-20,USD,89881,19014
+Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10652,2026-07-22,2026-09-20,CLP,9744000,9744000
+Constructora Alerce SpA,76.412.330-5,pagos@alerce.cl,F-10406,2026-08-08,2026-09-22,CLP,5828000,5828000
+Constructora Alerce SpA,76.412.330-5,pagos@alerce.cl,F-10401,2026-07-25,2026-09-23,CLP,6477000,6477000
+Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10676,2026-08-11,2026-09-25,CLP,2869000,2869000
+Distribuidora Bahia Azul,79.554.012-6,cobranzas@bahiaazul.cl,F-10637,2026-06-30,2026-09-28,CLP,8625000,0
+Frigorifico Osorno SpA,77.667.889-2,pagos@friosorno.cl,F-10648,2026-08-08,2026-10-07,CLP,8705000,0
+Constructora Alerce SpA,76.412.330-5,pagos@alerce.cl,F-10408,2026-08-10,2026-10-09,CLP,4261000,4261000
+Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10568,2026-08-10,2026-10-09,CLP,4689000,0
+Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10629,2026-08-16,2026-10-15,CLP,3380000,3380000
+Minera Andacollo SpA,76.883.112-4,cuentas@mineraandacollo.cl,F-10514,2026-07-25,2026-10-23,USD,15770,15770
+Clínica Los Robles,78.112.667-3,administracion@clinrobles.cl,F-10577,2026-07-26,2026-10-24,CLP,8148000,8148000
+Inmobiliaria Pehuen,76.998.441-7,gerencia@pehuen.cl,F-10624,2026-08-07,2026-11-05,CLP,4585000,4585000
+Agroindustrial Maipo SA,96.551.740-2,tesoreria@agromaipo.cl,F-10453,2026-08-13,2026-11-11,CLP,5735000,5735000
+Transportes Vinamar Ltda,78.990.221-K,contabilidad@vinamar.cl,F-10416,2026-08-21,2026-11-19,CLP,8453000,8453000

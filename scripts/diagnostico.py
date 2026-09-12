@@ -33,4 +33,7 @@ with sync_playwright() as p:
         "(()=>{const c=document.querySelectorAll('canvas')[0];if(!c)return 'n/a';"
         "const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;"
         "for(let i=3;i<d.length;i+=4){if(d[i]!==0)return true}return false})()"))
+    print("aviso multimoneda:", pg.evaluate(
+        "(()=>{const e=document.getElementById('nota');"
+        "return e && e.style.display!=='none' ? e.textContent : 'no aplica'})()"))
     b.close()

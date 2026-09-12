@@ -1,22 +1,28 @@
 # -*- coding: utf-8 -*-
 """
-Radar de Cobranza v0.1
-Convierte un listado de facturas (CSV) en un tablero de cobranza:
+Radar de Cobranza v0.2
+Convierte un listado de facturas (CSV o XLSX) en un tablero de cobranza:
 - KPIs: total por cobrar, vencido, % vencido, DSO, atraso promedio, top deudor
 - Aging de cartera (corriente / 0-30 / 31-60 / 61-90 / +90)
 - Ranking de clientes por deuda vencida
 - Tabla con semaforo de atraso
+- Multimoneda: convierte la cartera a CLP con tipos de cambio configurables
 - CSV de recordatorios + texto de correo por cliente
+- Export a PDF (si hay Chrome o Edge instalado)
 
-Sin dependencias externas: solo libreria estandar de Python 3.
+Sin dependencias externas: solo libreria estandar de Python 3 (XLSX incluido).
 """
 import argparse
 import csv
 import json
 import os
 import re
+import shutil
+import subprocess
 import unicodedata
-from datetime import date, datetime
+import zipfile
+from datetime import date, datetime, timedelta
+from xml.etree import ElementTree as ET
 
 # ---------------------------------------------------------------- utilidades
 
@@ -29,7 +35,35 @@ ALIAS = {
     "monto": ["monto", "total", "valor", "importe", "monto_total"],
     "pagado": ["pagado", "abono", "pagos", "monto_pagado"],
     "email": ["email", "correo", "e_mail", "mail"],
+    "moneda": ["moneda", "currency", "divisa", "mon"],
+    "tc": ["tipo_cambio", "tc", "cambio", "valor_cambio"],
 }
+
+# Tipos de cambio por defecto a CLP. Se pueden pisar con --tc "USD=980,EUR=1060".
+TASAS = {"CLP": 1.0, "USD": 950.0, "EUR": 1030.0, "UF": 39000.0}
+
+SIMBOLO = {"CLP": "$", "USD": "US$", "EUR": "EUR ", "UF": "UF "}
+
+
+def a_moneda(v):
+    """Normaliza el nombre de la moneda."""
+    s = norm(v).upper()
+    if s in ("", "CLP", "PESO", "PESOS", "P"):
+        return "CLP"
+    if s in ("USD", "US$", "DOLAR", "DOLARES", "DOLAR_USD"):
+        return "USD"
+    if s in ("EUR", "EURO", "EUROS"):
+        return "EUR"
+    if s in ("UF",):
+        return "UF"
+    return s[:6] or "CLP"
+
+
+def fmt(monto, moneda="CLP"):
+    """Formatea un monto en su moneda."""
+    if moneda == "CLP":
+        return "$" + f"{round(monto):,}".replace(",", ".")
+    return SIMBOLO.get(moneda, moneda + " ") + f"{round(monto):,}".replace(",", ".")
 
 
 def norm(s):
@@ -87,6 +121,12 @@ def a_fecha(v):
             return datetime.strptime(s, f).date()
         except ValueError:
             continue
+    # Excel guarda fechas como numero de serie (dias desde 1899-12-30)
+    if re.fullmatch(r"\d{5}(\.\d+)?", s):
+        try:
+            return (datetime(1899, 12, 30) + timedelta(days=float(s))).date()
+        except (ValueError, OverflowError):
+            return None
     return None
 
 
@@ -97,7 +137,58 @@ def clp(x):
 # ---------------------------------------------------------------- calculo
 
 
-def leer_facturas(path):
+def leer_xlsx(path):
+    """Lee la primera hoja de un XLSX usando solo la libreria estandar."""
+    ns = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
+    with zipfile.ZipFile(path) as z:
+        nombres = z.namelist()
+        compartidas = []
+        if "xl/sharedStrings.xml" in nombres:
+            raiz = ET.fromstring(z.read("xl/sharedStrings.xml"))
+            for si in raiz.findall(f"{ns}si"):
+                compartidas.append("".join(t.text or "" for t in si.iter(f"{ns}t")))
+        hoja = "xl/worksheets/sheet1.xml"
+        if hoja not in nombres:
+            hojas = sorted(n for n in nombres
+                           if n.startswith("xl/worksheets/sheet") and n.endswith(".xml"))
+            if not hojas:
+                raise SystemExit(f"El XLSX no tiene hojas legibles: {path}")
+            hoja = hojas[0]
+        raiz = ET.fromstring(z.read(hoja))
+
+    crudas = {}
+    for fila in raiz.iter(f"{ns}row"):
+        celdas = {}
+        for c in fila.findall(f"{ns}c"):
+            ref = c.get("r") or ""
+            m = re.match(r"([A-Z]+)", ref)
+            if not m:
+                continue
+            col = 0
+            for ch in m.group(1):
+                col = col * 26 + (ord(ch) - 64)
+            tipo = c.get("t")
+            if tipo == "s":
+                v = c.find(f"{ns}v")
+                idx = int(v.text) if v is not None and v.text else -1
+                texto = compartidas[idx] if 0 <= idx < len(compartidas) else ""
+            elif tipo == "inlineStr":
+                nodo = c.find(f"{ns}is")
+                texto = "".join(t.text or "" for t in nodo.iter(f"{ns}t")) if nodo is not None else ""
+            else:
+                v = c.find(f"{ns}v")
+                texto = (v.text or "") if v is not None else ""
+            celdas[col - 1] = (texto or "").strip()
+        if celdas:
+            ancho = max(celdas) + 1
+            crudas[int(fila.get("r") or 0)] = [celdas.get(i, "") for i in range(ancho)]
+    return [crudas[k] for k in sorted(crudas)]
+
+
+def leer_filas(path):
+    """Devuelve la matriz de celdas desde CSV (cualquier delimitador) o XLSX."""
+    if path.lower().endswith((".xlsx", ".xlsm")):
+        return leer_xlsx(path)
     with open(path, "r", encoding="utf-8-sig", newline="") as fh:
         muestra = fh.read(4096)
         fh.seek(0)
@@ -105,7 +196,11 @@ def leer_facturas(path):
             dialecto = csv.Sniffer().sniff(muestra, delimiters=",;\t|")
         except csv.Error:
             dialecto = csv.excel
-        filas = list(csv.reader(fh, dialecto))
+        return list(csv.reader(fh, dialecto))
+
+
+def leer_facturas(path):
+    filas = leer_filas(path)
     if not filas:
         raise SystemExit("El archivo no tiene filas.")
     mapa = mapear_columnas(filas[0])
@@ -141,14 +236,22 @@ def leer_facturas(path):
             "vencimiento": venc,
             "monto": monto,
             "pagado": pagado,
+            "moneda": a_moneda(val("moneda")),
+            "tc": a_numero(val("tc")),
             "saldo": max(monto - pagado, 0.0),
         })
     return facturas
 
 
 def analizar(facturas, hoy):
-    """Devuelve estructura lista para el tablero."""
-    pendientes = [f for f in facturas if f["saldo"] > 0.5]
+    """Devuelve estructura lista para el tablero. Todos los agregados en CLP."""
+    for f in facturas:
+        f["tasa"] = f.get("tc", 0.0) if f.get("tc", 0.0) > 0 else TASAS.get(f["moneda"], 1.0)
+        if f["moneda"] == "CLP":
+            f["tasa"] = 1.0
+        f["saldo_clp"] = f["saldo"] * f["tasa"]
+        f["monto_clp"] = f["monto"] * f["tasa"]
+    pendientes = [f for f in facturas if f["saldo_clp"] > 0.5]
     for f in pendientes:
         f["atraso"] = (hoy - f["vencimiento"]).days
         f["corriente"] = f["atraso"] <= 0
@@ -175,8 +278,8 @@ def analizar(facturas, hoy):
         dias = max((hoy - min(fechas)).days, 1)
     else:
         dias = 365
-    facturado = sum(f["monto"] for f in facturas)
-    dso = (sum(f["saldo"] for f in pendientes) / (facturado / dias)) if facturado else 0.0
+    facturado = sum(f["monto_clp"] for f in facturas)
+    dso = (sum(f["saldo_clp"] for f in pendientes) / (facturado / dias)) if facturado else 0.0
 
     # ranking por cliente
     por_cliente = {}
@@ -186,8 +289,8 @@ def analizar(facturas, hoy):
             "saldo": 0.0, "vencido": 0.0, "facturas": 0,
             "max_atraso": 0, "facturas_detalle": [],
         })
-        c["saldo"] += f["saldo"]
-        c["vencido"] += f["saldo"]
+        c["saldo"] += f["saldo_clp"]
+        c["vencido"] += f["saldo_clp"]
         c["facturas"] += 1
         c["max_atraso"] = max(c["max_atraso"], f["atraso"])
         c["facturas_detalle"].append(f)
@@ -199,21 +302,23 @@ def analizar(facturas, hoy):
                 "saldo": 0.0, "vencido": 0.0, "facturas": 0,
                 "max_atraso": 0, "facturas_detalle": [],
             })
-            c["saldo"] += f["saldo"]
+            c["saldo"] += f["saldo_clp"]
             c["facturas"] += 1
 
     ranking = sorted(por_cliente.values(), key=lambda c: (-c["vencido"], -c["saldo"]))
 
     tramos = ["Corriente", "0-30 dias", "31-60 dias", "61-90 dias", "+90 dias"]
-    aging = [{"tramo": t, "monto": round(sum(f["saldo"] for f in pendientes if f["tramo"] == t))}
+    aging = [{"tramo": t, "monto": round(sum(f["saldo_clp"] for f in pendientes if f["tramo"] == t))}
              for t in tramos]
 
-    total = sum(f["saldo"] for f in pendientes)
-    vencido = sum(f["saldo"] for f in vencidas)
+    total = sum(f["saldo_clp"] for f in pendientes)
+    vencido = sum(f["saldo_clp"] for f in vencidas)
     atraso_prom = (sum(f["atraso"] for f in vencidas) / len(vencidas)) if vencidas else 0.0
 
+    monedas = sorted({f["moneda"] for f in pendientes})
     return {
         "hoy": hoy.isoformat(),
+        "multimoneda": len([m for m in monedas if m != "CLP"]) > 0,
         "kpis": {
             "por_cobrar": round(total),
             "vencido": round(vencido),
@@ -223,6 +328,8 @@ def analizar(facturas, hoy):
             "top_deudor": ranking[0]["cliente"] if ranking and ranking[0]["vencido"] > 0 else "-",
             "n_clientes": len([c for c in ranking if c["saldo"] > 0]),
             "n_facturas": len(pendientes),
+            "monedas": monedas,
+            "tasas": {m: TASAS.get(m, 1.0) for m in monedas},
         },
         "aging": aging,
         "ranking": [
@@ -235,7 +342,9 @@ def analizar(facturas, hoy):
             {"cliente": f["cliente"], "rut": f["rut"], "folio": f["folio"],
              "vencimiento": f["vencimiento"].isoformat(), "atraso": f["atraso"],
              "monto": round(f["monto"]), "pagado": round(f["pagado"]),
-             "saldo": round(f["saldo"]), "tramo": f["tramo"]}
+             "saldo": round(f["saldo"]), "tramo": f["tramo"],
+             "moneda": f["moneda"], "tasa": f["tasa"],
+             "saldo_clp": round(f["saldo_clp"])}
             for f in sorted(pendientes, key=lambda x: -x["atraso"])
         ],
     }
@@ -291,7 +400,7 @@ def escribir_correos(datos, carpeta):
         if c["vencido"] <= 0:
             continue
         detalle = "\n".join(
-            f"  - Factura {f['folio']} vence {f['vencimiento']}: {clp(f['saldo'])} "
+            f"  - Factura {f['folio']} vence {f['vencimiento']}: {fmt(f['saldo'], f['moneda'])} "
             f"({f['atraso']} dias)"
             for f in sorted(
                 [x for x in datos["facturas"]
@@ -349,6 +458,8 @@ PLANTILLA_HTML = """<!DOCTYPE html>
   .c-0-30dias{background:var(--amar)}.c-31-60dias{background:var(--nara)}
   .c-61-90dias{background:var(--rojo)}.c-90dias{background:var(--rojo2)}
   .doc{color:var(--suave);font-size:.78rem;margin-top:4px}
+  .nota{background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12;border-radius:8px;
+        padding:10px 14px;font-size:.83rem;margin-bottom:18px}
   footer{padding:18px 28px;color:var(--suave);font-size:.78rem;text-align:center}
 </style>
 </head>
@@ -359,6 +470,7 @@ PLANTILLA_HTML = """<!DOCTYPE html>
 </header>
 <main>
   <section class="kpis" id="kpis"></section>
+  <div id="nota" class="nota" style="display:none"></div>
   <section class="grid">
     <div class="card"><h2>Aging de cartera</h2><div class="chart"><canvas id="cAging"></canvas></div></div>
     <div class="card"><h2>Top deudores (vencido)</h2><div class="chart"><canvas id="cTop"></canvas></div></div>
@@ -375,8 +487,8 @@ PLANTILLA_HTML = """<!DOCTYPE html>
     <h2>Facturas pendientes</h2>
     <table id="tFac">
       <thead><tr><th>Cliente</th><th>Factura</th><th>Vencimiento</th>
-      <th class="num">Atraso</th><th>Tramo</th><th class="num">Monto</th>
-      <th class="num">Saldo</th></tr></thead><tbody></tbody>
+      <th class="num">Atraso</th><th>Tramo</th><th>Mon.</th><th class="num">Monto</th>
+      <th class="num">Saldo</th><th class="num">Saldo CLP</th></tr></thead><tbody></tbody>
     </table>
     <div class="doc">Atraso en dias corridos respecto de la fecha de vencimiento. Saldo = monto - pagado.</div>
   </div>
@@ -385,7 +497,20 @@ PLANTILLA_HTML = """<!DOCTYPE html>
 <script>
 const D = __DATA__;
 const clp = n => '$' + n.toLocaleString('es-CL');
+const fmt = (n,m) => m === 'CLP' ? clp(n)
+  : (m === 'USD' ? 'US$' : m + ' ') + n.toLocaleString('es-CL');
 const clase = t => 'c-' + t.replace(/\\s+/g,'').replace('Corriente','Corriente');
+
+// Nota de multimoneda
+if (D.multimoneda) {
+  const t = D.kpis.tasas;
+  const pares = Object.keys(t).filter(m=>m!=='CLP').map(m=>m+'='+t[m].toLocaleString('es-CL')).join('  ');
+  const el = document.getElementById('nota');
+  el.style.display = 'block';
+  el.innerHTML = 'Cartera en varias monedas (' + D.kpis.monedas.join(', ') +
+    '). Los totales estan convertidos a CLP con: ' + pares +
+    ' por unidad. Ajustable con la opcion --tc.';
+}
 
 // KPIs
 const k = D.kpis;
@@ -442,8 +567,10 @@ document.querySelector('#tFac tbody').innerHTML = D.facturas.map(f=>
   `<tr><td>${f.cliente}</td><td>${f.folio}</td><td>${f.vencimiento}</td>
    <td class="num">${f.atraso<=0?'-':f.atraso}</td>
    <td><span class="pill ${clase(f.tramo)}">${f.tramo}</span></td>
-   <td class="num">${clp(f.monto)}</td>
-   <td class="num">${clp(f.saldo)}</td></tr>`).join('');
+   <td>${f.moneda}</td>
+   <td class="num">${fmt(f.monto, f.moneda)}</td>
+   <td class="num">${fmt(f.saldo, f.moneda)}</td>
+   <td class="num">${D.multimoneda ? clp(f.saldo_clp) : '-'}</td></tr>`).join('');
 </script>
 </body>
 </html>
@@ -463,17 +590,63 @@ def escribir_dashboard(datos, carpeta, titulo):
     return ruta
 
 
+def exportar_pdf(html_path, carpeta):
+    """Exporta el tablero a PDF usando Chrome/Edge en modo headless.
+
+    No agrega dependencias de Python: reutiliza el navegador ya instalado.
+    """
+    candidatos = [
+        os.environ.get("CHROME_PATH"),
+        shutil.which("chrome"),
+        shutil.which("google-chrome"),
+        shutil.which("chromium"),
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium",
+    ]
+    exe = next((c for c in candidatos if c and os.path.exists(c)), None)
+    if not exe:
+        print("  PDF: no encontre Chrome ni Edge en el sistema.")
+        print("       Alternativa: abre el tablero y usa Imprimir > Guardar como PDF.")
+        return None
+    destino = os.path.abspath(os.path.join(carpeta, "radar.pdf"))
+    url = "file:///" + os.path.abspath(html_path).replace("\\", "/")
+    cmd = [exe, "--headless=new", "--disable-gpu", "--no-pdf-header-footer",
+           "--virtual-time-budget=6000", f"--print-to-pdf={destino}", url]
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, timeout=180)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as e:
+        print(f"  PDF: fallo la exportacion ({type(e).__name__})")
+        return None
+    if os.path.exists(destino) and os.path.getsize(destino) > 0:
+        return destino
+    print("  PDF: el navegador no genero el archivo")
+    return None
+
+
 # ---------------------------------------------------------------- main
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Radar de Cobranza v0.1")
+    ap = argparse.ArgumentParser(description="Radar de Cobranza v0.2")
     ap.add_argument("--input", "-i", default="datos/facturas_demo.csv",
-                    help="CSV de facturas")
+                    help="CSV o XLSX de facturas")
     ap.add_argument("--out", "-o", default="salida", help="carpeta de salida")
     ap.add_argument("--hoy", help="fecha de corte YYYY-MM-DD (por defecto hoy)")
     ap.add_argument("--titulo", default="Cartera", help="nombre de la cartera/empresa")
+    ap.add_argument("--tc", help='tipos de cambio a CLP, ej: "USD=980,EUR=1060,UF=39500"')
+    ap.add_argument("--pdf", action="store_true", help="exportar tambien el tablero a PDF")
     args = ap.parse_args()
+
+    if args.tc:
+        for par in args.tc.split(","):
+            if "=" in par:
+                moneda, valor = par.split("=", 1)
+                TASAS[a_moneda(moneda)] = a_numero(valor)
+        print("Tipos de cambio:", ", ".join(f"{m}={v:g}" for m, v in TASAS.items()))
 
     hoy = a_fecha(args.hoy) if args.hoy else date.today()
     os.makedirs(args.out, exist_ok=True)
@@ -498,6 +671,10 @@ def main():
     print(f"  Tablero   : {r1}")
     print(f"  Recordatorios: {r2}")
     print(f"  Correos   : {carpeta_correos} ({n} borradores)")
+    if args.pdf:
+        pdf = exportar_pdf(r1, args.out)
+        if pdf:
+            print(f"  PDF       : {pdf}")
 
 
 if __name__ == "__main__":

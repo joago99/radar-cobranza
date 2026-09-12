@@ -10,6 +10,8 @@ transforma en una pantalla que dice donde esta el problema y cual es el proximo 
 
 - **Tablero HTML** (`salida/radar.html`): KPIs, aging de cartera, ranking de deudores
   y detalle de facturas con semaforo de atraso.
+- **PDF** (`salida/radar.pdf`, opcional con `--pdf`): el mismo tablero listo para
+  circular por correo.
 - **CSV de recordatorios** (`salida/recordatorios.csv`): accion sugerida por cliente.
 - **Borradores de correo** (`salida/correos/`): un texto por cliente moroso, listo para copiar.
 
@@ -31,7 +33,7 @@ cobranza, 61-90 llamada gerencial, sobre 90 dias cobranza judicial.
 
 ## Uso
 
-Requiere solo Python 3 (sin dependencias externas).
+Requiere solo Python 3. Sin dependencias externas (ni pandas, ni openpyxl).
 
 ```bash
 python scripts/generar_demo.py          # crea datos/facturas_demo.csv (sintetico)
@@ -43,14 +45,33 @@ Abre `salida/radar.html` en el navegador.
 Opciones:
 
 ```bash
-python radar.py --hoy 2026-09-11        # fecha de corte (reproducible)
-python radar.py --titulo "Cartera Norte"
+# Excel en vez de CSV
+python radar.py -i cartera.xlsx
+
+# fecha de corte reproducible
+python radar.py --hoy 2026-09-11
+
+# tipos de cambio propios para cartera multimoneda
+python radar.py --tc "USD=962,EUR=1055,UF=39500"
+
+# exportar tambien a PDF (usa Chrome o Edge del sistema)
+python radar.py --pdf
 ```
+
+## Demo
+
+- Tablero de ejemplo: [`demo/index.html`](demo/index.html)
+- Vista previa: [`demo/preview.png`](demo/preview.png)
+- PDF de ejemplo: [`demo/radar.pdf`](demo/radar.pdf)
+
+La demo se genera con 72 facturas sinteticas de 12 empresas ficticias, incluidos dos
+clientes que facturan en dolares.
 
 ## Formato de entrada
 
-CSV delimitado por coma, punto y coma, tabulacion o pipe. Los nombres de columna se
-reconocen por alias (sin distinguir mayusculas, tildes ni espacios):
+CSV (delimitado por coma, punto y coma, tabulacion o pipe) o XLSX/XLSM.
+Los nombres de columna se reconocen por alias, sin distinguir mayusculas, tildes ni
+espacios:
 
 | Campo | Alias aceptados | Obligatorio |
 |---|---|---|
@@ -62,14 +83,49 @@ reconocen por alias (sin distinguir mayusculas, tildes ni espacios):
 | Vencimiento | vencimiento, fecha_vencimiento, vence | Si |
 | Monto | monto, total, valor, importe | Si |
 | Pagado | pagado, abono, pagos | No |
+| Moneda | moneda, currency, divisa | No (por defecto CLP) |
+| Tipo de cambio | tipo_cambio, tc, cambio | No (por defecto tabla interna) |
 
-Montos en formato chileno (`1.234.567` o `1.234,56`) o simple (`1234567.50`).
-Fechas `YYYY-MM-DD`, `DD-MM-YYYY` o `DD/MM/YYYY`.
+- Montos en formato chileno (`1.234.567` o `1.234,56`) o simple (`1234567.50`).
+- Fechas `YYYY-MM-DD`, `DD-MM-YYYY`, `DD/MM/YYYY`, o fecha nativa de Excel.
+- En XLSX se lee la primera hoja.
 
 ```csv
-cliente,rut,email,numero,emision,vencimiento,monto,pagado
-Constructora Alerce SpA,76.412.330-5,pagos@alerce.cl,F-10401,2026-05-02,2026-06-01,4820000,0
+cliente,rut,email,numero,emision,vencimiento,moneda,monto,pagado
+Constructora Alerce SpA,76.412.330-5,pagos@alerce.cl,F-10401,2026-05-02,2026-06-01,CLP,4820000,0
 ```
+
+## Multimoneda
+
+Si la cartera mezcla monedas, cada factura conserva su moneda original en el detalle y
+todos los agregados se convierten a CLP. La tasa de cada factura se toma, en orden de
+prioridad, de la columna `tipo_cambio`, de `--tc`, o de la tabla interna
+(USD 950, EUR 1030, UF 39000). El tablero muestra un aviso con las tasas aplicadas.
+
+## Estructura
+
+```
+radar.py                       programa principal
+datos/                         archivos de entrada (demo sintetica incluida)
+demo/                          salida de ejemplo versionada (tablero, PDF, preview)
+scripts/generar_demo.py        genera facturas sinteticas
+scripts/captura.py             captura el tablero a PNG (requiere playwright + Chrome)
+scripts/diagnostico.py         revisa errores de consola y estado del render
+vendor/chart.umd.min.js        Chart.js local (sin CDN, funciona offline)
+salida/                        salidas generadas (no versionado)
+```
+
+## Como verificar que el tablero esta bien generado
+
+`scripts/diagnostico.py` abre el tablero con Chrome, reporta errores de consola,
+cuenta los graficos instanciados y confirma que los canvas tienen pixeles dibujados.
+Sirve para no confundir un "no se ve nada" con un problema de datos:
+
+```bash
+python scripts/diagnostico.py            # por defecto salida/radar.html
+```
+
+Salida esperada: `errores de pagina: ninguno`, `instancias: 2`, `canvas[0] con pixeles: True`.
 
 ## Privacidad
 
@@ -78,8 +134,9 @@ lado. Chart.js se sirve desde `vendor/` (sin CDN).
 
 ## Estado
 
-v0.1 - alcance cerrado: aging, ranking, recordatorios. Fuera de alcance por ahora:
-multimoneda, envio automatico de correos, conexion directa a ERP.
+v0.2 - incluye lectura XLSX, multimoneda y export a PDF. Fuera de alcance por ahora:
+envio automatico de correos, conexion directa a ERP/sistema de facturacion,
+proyeccion de flujo de caja.
 
 ## Licencia
 

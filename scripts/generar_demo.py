@@ -28,6 +28,9 @@ CLIENTES = [
 # perfil de pago por cliente: 0 = excelente, 1 = regular, 2 = malo
 PERFIL = [0, 1, 2, 0, 2, 1, 0, 2, 1, 0, 1, 2]
 
+# clientes que facturan en dolares (para probar multimoneda)
+EN_USD = {"Retail Sur Global SA", "Minera Andacollo SpA"}
+
 HOY = date.today()
 MESES = 7
 filas = []
@@ -40,7 +43,11 @@ for cliente, rut, email in CLIENTES:
         emision = HOY - timedelta(days=random.randint(10, 30 * MESES))
         plazo = random.choice([30, 30, 45, 60, 90])
         vencimiento = emision + timedelta(days=plazo)
-        monto = round(random.uniform(280_000, 9_800_000), -3)
+        moneda = "USD" if cliente in EN_USD else "CLP"
+        if moneda == "USD":
+            monto = round(random.uniform(4_000, 120_000), 0)
+        else:
+            monto = round(random.uniform(280_000, 9_800_000), -3)
         folio += random.randint(1, 7)
 
         antiguedad = (HOY - vencimiento).days
@@ -58,7 +65,7 @@ for cliente, rut, email in CLIENTES:
         filas.append({
             "cliente": cliente, "rut": rut, "email": email,
             "numero": f"F-{folio}", "emision": emision.isoformat(),
-            "vencimiento": vencimiento.isoformat(),
+            "vencimiento": vencimiento.isoformat(), "moneda": moneda,
             "monto": int(monto), "pagado": int(pagado),
         })
 
@@ -69,10 +76,12 @@ os.makedirs(destino, exist_ok=True)
 ruta = os.path.join(destino, "facturas_demo.csv")
 with open(ruta, "w", encoding="utf-8-sig", newline="") as fh:
     w = csv.DictWriter(fh, fieldnames=["cliente", "rut", "email", "numero",
-                                       "emision", "vencimiento", "monto", "pagado"])
+                                       "emision", "vencimiento", "moneda",
+                                       "monto", "pagado"])
     w.writeheader()
     w.writerows(filas)
 
-pendiente = sum(f["monto"] - f["pagado"] for f in filas)
+pendiente_clp = sum((f["monto"] - f["pagado"]) * (950 if f["moneda"] == "USD" else 1)
+                     for f in filas)
 print(f"{len(filas)} facturas -> {ruta}")
-print(f"Saldo pendiente total: ${pendiente:,.0f}".replace(",", "."))
+print(f"Saldo pendiente total (a CLP, USD=950): ${pendiente_clp:,.0f}".replace(",", "."))

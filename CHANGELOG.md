@@ -2,6 +2,27 @@
 
 Formato basado en Keep a Changelog. Versionado semantico.
 
+## [0.2.0] - 2026-09-11
+
+### Agregado
+- Lectura de XLSX/XLSM con libreria estandar (`zipfile` + XML), sin openpyxl:
+  cadenas compartidas, cadenas en linea y conversion de fechas nativas de Excel.
+- Soporte multimoneda: columna `moneda` (CLP, USD, EUR, UF), conversion de todos los
+  agregados a CLP y aviso en el tablero con las tasas aplicadas.
+- Columna `tipo_cambio` por factura y opcion `--tc "USD=962,EUR=1055"` para fijar
+  tipos de cambio propios.
+- Export a PDF con `--pdf`, usando Chrome o Edge en modo headless (sin dependencias
+  de Python).
+- Detalle de facturas con columna de moneda y saldo convertido a CLP.
+- Demo versionada en `demo/` (tablero, PDF, vista previa).
+- Script `scripts/captura.py` para capturar el tablero a PNG.
+- Diagnostico ampliado: reporta el aviso de multimoneda.
+
+### Cambiado
+- Los agregados (KPIs, aging, ranking) se calculan siempre en CLP; el detalle de
+  facturas mantiene la moneda original.
+- Formato de la linea de tipos de cambio en consola, sin separador de miles.
+
 ## [0.1.0] - 2026-09-11
 
 ### Agregado
